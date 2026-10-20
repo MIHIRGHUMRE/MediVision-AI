@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>MediVision AI | MRI Review Prototype</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="MediVision AI home">
+          <span class="brand-mark">M</span>
+          <span><strong>MediVision</strong><small>RESEARCH WORKSPACE</small></span>
+        </a>
+        <div class="side-label">WORKSPACE</div>
+        <button class="nav-item active" type="button"><span>▦</span> MRI review queue</button>
+        <div class="sidebar-note">
+          <span class="status-dot"></span>
+          <div><strong>Research workspace</strong><small>Persistent case metadata</small></div>
+        </div>
+        <div class="sidebar-footer">MediVision AI · v0.2<br>Research use only</div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div><span class="eyebrow">CLINICAL WORKSPACE</span><h1>MRI report review</h1></div>
+          <div class="topbar-actions">
+            <form id="api-auth-form" class="api-auth-form">
+              <label class="visually-hidden" for="api-key">API access key</label>
+              <input id="api-key" type="password" autocomplete="current-password" placeholder="API access key" required>
+              <button class="button secondary" type="submit">Connect</button>
+            </form>
+            <div class="topbar-tag"><span class="status-dot"></span> Human review required</div>
+          </div>
+        </header>
+
+        <section class="safety-banner" role="note">
+          <span class="safety-icon">!</span>
+          <div><strong>Research prototype — not for clinical diagnosis or treatment.</strong>
+            Image analysis, AI drafting, RAG, and automated triage are not connected. Entered content is user-supplied; every draft remains pending qualified radiologist review.</div>
+        </section>
+
+        <div class="workspace-grid">
+          <section class="panel workflow-panel">
+            <div class="panel-heading">
+              <div><span class="eyebrow">CASE WORKFLOW</span><h2 id="form-title">Start a review case</h2></div>
+              <span id="case-status" class="pill neutral">NEW CASE</span>
+            </div>
+            <form id="case-form">
+              <div class="field">
+                <label for="body-region">MRI body region</label>
+                <select id="body-region" name="body_region" required>
+                  <option value="">Select a region</option>
+                  <option value="brain">Brain</option>
+                  <option value="spine">Spine</option>
+                  <option value="knee">Knee</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="scan-files">MRI image files <span class="optional">DICOM, NIfTI, PNG, JPEG</span></label>
+                <input id="scan-files" name="files" type="file" accept=".dcm,.nii,.nii.gz,.png,.jpg,.jpeg" multiple required>
+                <small class="helper">De-identify files before upload. Total request limit: 100 MiB. File contents are discarded after validation; no image analysis is performed.</small>
+              </div>
+              <button id="create-case" class="button primary" type="submit">Create review case <span>→</span></button>
+            </form>
+
+            <div class="divider"></div>
+            <form id="report-form" class="disabled-form">
+              <div class="section-heading"><div><span class="step-number">1</span><h3>Report draft</h3></div>
+                <span class="input-source">Manual entry only</span></div>
+              <div class="field">
+                <label for="indication">Clinical indication <span class="optional">Optional</span></label>
+                <textarea id="indication" rows="2" placeholder="Enter a de-identified indication"></textarea>
+              </div>
+              <div class="field">
+                <label for="findings">Findings</label>
+                <textarea id="findings" rows="4" placeholder="Enter findings for the radiologist to review" required></textarea>
+              </div>
+              <div class="field">
+                <label for="impression">Impression</label>
+                <textarea id="impression" rows="3" placeholder="Enter a draft impression" required></textarea>
+              </div>
+              <button class="button secondary" type="submit">Save draft for review <span>→</span></button>
+            </form>
+
+            <div id="review-panel" class="review-panel hidden">
+              <div class="divider"></div>
+              <div class="section-heading"><div><span class="step-number">2</span><h3>Radiologist review</h3></div></div>
+              <p class="review-hint">Only use these controls in a supervised demonstration. This prototype has no identity verification or authorization.</p>
+              <div class="field"><label for="reviewer">Reviewer name</label><input id="reviewer" type="text" autocomplete="off" placeholder="Qualified reviewer"></div>
+              <div class="field"><label for="review-note">Review note <span class="optional">Required if returned</span></label><textarea id="review-note" rows="2" placeholder="Reason for return, if applicable"></textarea></div>
+              <div class="button-row">
+                <button id="return-report" class="button quiet" type="button">Return for revision</button>
+                <button id="sign-report" class="button primary" type="button">Mark reviewed &amp; signed</button>
+              </div>
+            </div>
+            <div id="message" class="message hidden" role="status"></div>
+          </section>
+
+          <aside class="right-column">
+            <section class="panel queue-panel">
+              <div class="panel-heading"><div><span class="eyebrow">LOCAL SESSION</span><h2>Review queue</h2></div><span id="queue-count" class="count-badge">0</span></div>
+              <div id="case-list" class="case-list"><p class="empty-state">No cases yet. Create a case to begin a supervised workflow demo.</p></div>
+              <button id="new-case" class="button outline" type="button">＋ New case</button>
+            </section>
+            <section class="panel preview-panel">
+              <div class="panel-heading"><div><span class="eyebrow">DRAFT PREVIEW</span><h2>Structured report</h2></div></div>
+              <div id="preview-empty" class="preview-empty"><span class="preview-icon">▤</span><p>A saved report draft will appear here.</p></div>
+              <pre id="report-preview" class="report-preview hidden"></pre>
+              <div id="urgency-card" class="urgency-card hidden"><span class="urgency-dot"></span><div><small>URGENCY</small><strong>Not assessed — radiologist review required</strong></div></div>
+              <div class="preview-footnote">No image interpretation or urgency detection is performed.</div>
+            </section>
+          </aside>
+        </div>
+        <footer class="page-footer">Prototype only · Do not upload identifiable patient data · No clinical decisions are made by this software</footer>
+      </main>
+    </div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
